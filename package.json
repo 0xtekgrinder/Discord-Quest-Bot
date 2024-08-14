@@ -6,8 +6,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
-    "lint": "eslint --ext .ts,.js,.json src",
-    "lint:fix": "eslint --ext .ts,.js,.json src --fix",
+    "lint": "eslint --ext .ts,.js src",
+    "lint:fix": "eslint --ext .ts,.js src --fix",
     "start": "node dist/"
   },
   "keywords": [],
