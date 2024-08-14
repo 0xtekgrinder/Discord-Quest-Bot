@@ -40,11 +40,23 @@ const getSymbolFromCurveGauge = async (expectedGauge: string): Promise<string> =
 };
 
 const getBunniChainGauges = async (
-  chain: string,
+  chain: ChainIds,
 ): Promise<{ address: string; symbol: string }[]> => {
+  let subgrapghId: string;
+  switch (chain) {
+    case ChainIds.MAINNET:
+      subgrapghId = 'HH4HFj4rFnm5qnkb8MbEdP2V5eD9rZnLJE921YQAs7AV';
+      break;
+    case ChainIds.ARBITRUM:
+      subgrapghId = 'QmQNz7JfUh4ztY5S8w5dJggyCsGmxYZSgJRd8NRHsJ3KUN';
+      break;
+    default:
+      return [];
+  }
+
   try {
     const res = await axios.post(
-      `https://api.thegraph.com/subgraphs/name/bunniapp/bunni-${chain}`,
+      `https://gateway.thegraph.com/api/${process.env.SUBGRAPH_APIKEY}/subgraphs/id/${subgrapghId}`,
       {
         query:
           '{\n  bunniTokens(\n    where: {gauge_: {address_not: "0x0000000000000000000000000000000000000000"}}\n  ) {\n    gauge {\n      address\n    }\n    name\n  }\n}',
@@ -64,15 +76,11 @@ const getBunniChainGauges = async (
   }
 };
 
-const getSymbolFromBunniGauge = async (expectedGauge: string): Promise<string> => {
-  const chains = ['mainnet', 'arbitrum'];
-
-  for (const chain of chains) {
-    const gauges = await getBunniChainGauges(chain);
-    for (const gauge of gauges) {
-      if (getAddress(gauge.address) === getAddress(expectedGauge)) {
-        return gauge.symbol.replace('Bunni ', '').replace(' LP', '');
-      }
+const getSymbolFromBunniGauge = async (expectedGauge: string, chain: ChainIds): Promise<string> => {
+  const gauges = await getBunniChainGauges(chain);
+  for (const gauge of gauges) {
+    if (getAddress(gauge.address) === getAddress(expectedGauge)) {
+      return gauge.symbol.replace('Bunni ', '').replace(' LP', '');
     }
   }
   return '';
@@ -123,7 +131,7 @@ const getSymbolFromGauge = async (
     case ProtocolType.Curve:
       return getSymbolFromCurveGauge(gauge);
     case ProtocolType.Bunni:
-      return getSymbolFromBunniGauge(gauge);
+      return getSymbolFromBunniGauge(gauge, chainId);
     case ProtocolType.Fx:
       return getSymbolFromFxGauge(gauge, provider);
     default:
