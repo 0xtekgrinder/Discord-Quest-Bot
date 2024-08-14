@@ -17,6 +17,7 @@ import { ProtocolType } from '../../type/protocolType';
 import getQuestPeriod from '../../scripts/getQuestPeriods';
 import { QuestType } from '../../type/questType';
 import { ChainIds } from '../../globals/chainIds';
+import { getQuest, RewardsType } from '../../scripts/getQuest';
 
 const getChannels = (protocol: ProtocolType): string[] => {
   switch (protocol) {
@@ -186,16 +187,34 @@ const questCreationListener =
   ) => {
     console.log(`Quest ${questID} created by ${creator} on ${protocolType}`);
     try {
-      const periods = await getQuestPeriod(questBoardAddress, questID, chainId);
-      const latestPeriod = periods[periods.length - 1];
+      let maxObjectiveVotes: bigint;
+      let maxRewardPerVote: bigint;
+      let minObjectiveVotes: bigint;
+      let minRewardPerVote: bigint;
+      let rewardAmountPerPeriod: bigint;
+      let questType: QuestType;
+      if (chainId === ChainIds.MAINNET) {
+        const quest = await getQuest(questBoardAddress, questID, chainId);
 
-      const maxObjectiveVotes = latestPeriod.maxObjectiveVotes;
-      const maxRewardPerVote = latestPeriod.maxRewardPerVote;
-      const minObjectiveVotes = latestPeriod.minObjectiveVotes;
-      const minRewardPerVote = latestPeriod.minRewardPerVote;
-      const rewardAmountPerPeriod = latestPeriod.rewardAmountPerPeriod;
+        maxObjectiveVotes = quest.maxObjectiveVotes;
+        maxRewardPerVote = quest.maxRewardPerVote;
+        minObjectiveVotes = quest.minObjectiveVotes;
+        minRewardPerVote = quest.minRewardPerVote;
+        rewardAmountPerPeriod = quest.rewardAmountPerPeriod;
 
-      const questType = minRewardPerVote == maxRewardPerVote ? QuestType.Fixe : QuestType.Range;
+        questType = quest.types.rewardsType == RewardsType.FIXED ? QuestType.Fixe : QuestType.Range;
+      } else {
+        const periods = await getQuestPeriod(questBoardAddress, questID, chainId);
+        const latestPeriod = periods[periods.length - 1];
+
+        maxObjectiveVotes = latestPeriod.maxObjectiveVotes;
+        maxRewardPerVote = latestPeriod.maxRewardPerVote;
+        minObjectiveVotes = latestPeriod.minObjectiveVotes;
+        minRewardPerVote = latestPeriod.minRewardPerVote;
+        rewardAmountPerPeriod = latestPeriod.rewardAmountPerPeriod;
+
+        questType = minRewardPerVote == maxRewardPerVote ? QuestType.Fixe : QuestType.Range;
+      }
 
       const gaugeSymbol = await getSymbolFromGauge(gauge, protocolType, chainId);
       const rewardTokenSymbol = await getSymbolFromToken(rewardToken, chainId);

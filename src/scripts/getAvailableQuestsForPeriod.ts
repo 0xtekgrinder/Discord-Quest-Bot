@@ -17,7 +17,7 @@ const getAvailableQuestsForPeriod = async (addresses: {
             const availableQuestsNb = await contract.getQuestIdsForPeriod(
               (BigInt(Date.now()) / 1000n / WEEK) * WEEK,
             );
-            amount = amount + BigInt(availableQuestsNb.length);
+            amount += BigInt(availableQuestsNb.length);
           } catch (err) {
             console.error(err);
           }
